@@ -8,6 +8,15 @@ eureka:
       defaultZone: http://localhost:8761/eureka
 
 spring:
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: yourpassword
+      timeout: 60000
+  cache:
+    type: redis
+
   application:
     name: gateway
   config:
