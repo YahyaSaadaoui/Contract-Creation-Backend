@@ -1,0 +1,35 @@
+server:
+  port: 8222
+
+eureka:
+  client:
+    register-with-eureka: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+
+spring:
+  application:
+    name: gateway
+  config:
+    import: optional:configserver:http://localhost:8888
+  cloud:
+    gateway:
+      routes:
+        - id: admin
+          uri: lb://AdmindashboardService
+          predicates:
+            - Path=/api/v1/admin/**
+        - id: MerchentONBS
+          uri: lb://MerchentONBS
+          predicates:
+            - Path=/api/v1/MerchentONBS/**
+        - id: MerchentSS
+          uri: lb://MerchentSS
+          predicates:
+            - Path=/api/v1/MerchentSS/**
+        - id: TmsS
+          uri: lb://TmsS
+          predicates:
+            - Path=/api/v1/TmsS/**
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
