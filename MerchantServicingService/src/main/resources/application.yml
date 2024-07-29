@@ -14,15 +14,4 @@ spring:
     database-platform : org.hibernate.dialect.MySQL8Dialect
     show-sql: true
 
-eureka:
-  instance:
-    hostname: localhost
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka
-    register-with-eureka: true
-    fetch-registry: true
-
-server:
-  port: 8084
 
