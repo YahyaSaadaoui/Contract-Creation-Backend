@@ -1,4 +1,6 @@
-package com.hps.merchantonboardingservice.Enums;
+package com.hps.merchantservicingservice.Enums;
+
+
 
 public enum  SettlementOption {
     ON_DROP,

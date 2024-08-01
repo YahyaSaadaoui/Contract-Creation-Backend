@@ -1,7 +1,8 @@
-package com.hps.merchantonboardingservice.dto;
+package com.hps.merchantservicingservice.dto;
 
-import com.hps.merchantonboardingservice.Enums.FeeStructure;
-import com.hps.merchantonboardingservice.Enums.SettlementOption;
+
+import com.hps.merchantservicingservice.Enums.FeeStructure;
+import com.hps.merchantservicingservice.Enums.SettlementOption;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import lombok.Data;
@@ -26,6 +27,7 @@ public class MerchantDTO {
     private SettlementOption settlementOption;
     @Enumerated(EnumType.STRING)
     private FeeStructure feeStructure;
+
 
 }
 
