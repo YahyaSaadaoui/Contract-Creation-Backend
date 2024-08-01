@@ -4,7 +4,7 @@ spring:
   config:
     import: optional:configserver:http://localhost:8888
   datasource:
-    url: jdbc:mysql://localhost:3306/Admin?createDatabaseIfNotExist=true&serverTimezone=UTC
+    url: jdbc:mysql://localhost:3306/Admin-DashBoard?createDatabaseIfNotExist=true&serverTimezone=UTC
     username: root
     password: ""
   jpa:

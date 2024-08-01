@@ -2,12 +2,9 @@ package com.hps.merchantservicingservice.feign;
 
 
 import com.hps.merchantservicingservice.dto.MerchantDTO;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.net.URI;
 
 @FeignClient("MERCHANTONBOARDINGSERVICE")
 public interface MerchantInterface {
