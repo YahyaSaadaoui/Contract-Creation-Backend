@@ -4,36 +4,40 @@ import com.hps.merchantonboardingservice.dto.MerchantDTO;
 import com.hps.merchantonboardingservice.entities.Merchant;
 import com.hps.merchantonboardingservice.mapper.MerchantMapper;
 import com.hps.merchantonboardingservice.repos.MerchantRepo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
+
 import java.util.Optional;
 
 @Service
 public class MerchantOnboardingService {
     private final MerchantRepo merchantRepository;
     private final MerchantMapper merchantMapper;
+    private static final Logger logger = LoggerFactory.getLogger(MerchantOnboardingService.class);
 
-    @Autowired // Constructor injection
+    @Autowired
     public MerchantOnboardingService(MerchantRepo merchantRepository, MerchantMapper merchantMapper) {
         this.merchantRepository = merchantRepository;
         this.merchantMapper = merchantMapper;
-
     }
+
     public MerchantDTO createMerchant(MerchantDTO merchantDTO) {
+        logger.info("Received MerchantDTO: {}", merchantDTO);
         Merchant merchant = merchantMapper.toEntity(merchantDTO);
         Merchant savedMerchant = merchantRepository.save(merchant);
-        return merchantMapper.toDto(savedMerchant);
+        MerchantDTO savedMerchantDTO = merchantMapper.toDto(savedMerchant);
+        logger.info("Saved MerchantDTO: {}", savedMerchantDTO);
+        return savedMerchantDTO;
     }
 
     public MerchantDTO getMerchantById(Long id) throws Exception {
         Optional<Merchant> merchantOptional = merchantRepository.findById(id);
-        if (merchantOptional.isPresent())
-        {
+        if (merchantOptional.isPresent()) {
             return merchantMapper.toDto(merchantOptional.get());
         } else {
-            throw new Exception ("Merchant not found with id: " + id);
+            throw new Exception("Merchant not found with id: " + id);
         }
     }
 

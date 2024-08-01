@@ -22,7 +22,7 @@ public class MerchanServicingController {
     public ResponseEntity<MerchantDTO> createMerchant() {
         // Create a MerchantDTO object with real data
         MerchantDTO merchantDTO = new MerchantDTO();
-        merchantDTO.setMerchantId(1L);
+        merchantDTO.setMerchantId(1);
         merchantDTO.setMerchantNumber("123456");
         merchantDTO.setMerchantName("Test Merchant");
         merchantDTO.setContactInfo("test@example.com");
