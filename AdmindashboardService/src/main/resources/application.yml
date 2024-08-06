@@ -1,6 +1,10 @@
 spring:
   application:
     name: AdmindashboardService
+  profiles:
+    active: default
+  main:
+    allow-bean-definition-overriding: true
   config:
     import: optional:configserver:http://localhost:8888
   datasource:
