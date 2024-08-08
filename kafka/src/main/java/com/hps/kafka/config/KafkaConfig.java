@@ -12,6 +12,7 @@ import java.util.Map;
 @Configuration
 public class KafkaConfig {
 
+
     @Bean
     public KafkaAdmin kafkaAdmin() {
         Map<String, Object> configs = new HashMap<>();

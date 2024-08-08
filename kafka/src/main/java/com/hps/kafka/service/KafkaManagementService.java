@@ -24,11 +24,14 @@ import java.util.concurrent.ExecutionException;
 
 @Service
 public class KafkaManagementService {
-    @Autowired
-    private KafkaAdmin kafkaAdmin;
+    private final KafkaAdmin kafkaAdmin;
+    private final Map<String, Object> adminConfigs;
 
     @Autowired
-    private Map<String, Object> adminConfigs;
+    public KafkaManagementService(KafkaAdmin kafkaAdmin, Map<String, Object> adminConfigs) {
+        this.kafkaAdmin = kafkaAdmin;
+        this.adminConfigs = adminConfigs;
+    }
 
     public void createTopic(String topicName, int numPartitions, short replicationFactor) {
         NewTopic newTopic = new NewTopic(topicName, numPartitions, replicationFactor);
@@ -40,6 +43,7 @@ public class KafkaManagementService {
             adminClient.deleteTopics(Collections.singletonList(topicName)).all().get();
         }
     }
+
     public void subscribeToTopic(String topicName, String groupId) {
         Properties props = new Properties();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, adminConfigs.get("bootstrap.servers"));
@@ -53,7 +57,8 @@ public class KafkaManagementService {
 
         new Thread(() -> {
             while (true) {
-                ConsumerRecords<String, Object> records = consumer.poll(Duration.ofMillis(100));
+                ConsumerRecords<String,
+                        Object> records = consumer.poll(Duration.ofMillis(100));
                 records.forEach(record -> {
                     System.out.printf("Consumed record with key %s and value %s%n", record.key(), record.value());
                 });

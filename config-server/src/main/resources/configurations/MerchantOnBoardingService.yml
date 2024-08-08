@@ -17,7 +17,7 @@ spring:
       key-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
     consumer:
-      group-id: merchant-on-boarding-service
+      group-id: merchant-onboarding
       auto-offset-reset: earliest
       enable-auto-commit: true
       key-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer

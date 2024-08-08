@@ -1,9 +1,8 @@
-package com.hps.merchantonboardingservice.dto;
+package com.hps.tmsservice.entities;
 
-import com.hps.merchantonboardingservice.Enums.FeeStructure;
-import com.hps.merchantonboardingservice.Enums.SettlementOption;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
+import com.hps.tmsservice.Enums.FeeStructure;
+import com.hps.tmsservice.Enums.SettlementOption;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,9 +10,13 @@ import lombok.NoArgsConstructor;
 import java.sql.Date;
 
 @Data
+@Table(name = "Merchant")
+@Entity
 @NoArgsConstructor
 @AllArgsConstructor
-public class MerchantDTO {
+public class Merchant {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long merchantId;
     private String merchantNumber;
     private String merchantName;
@@ -30,6 +33,4 @@ public class MerchantDTO {
     private SettlementOption settlementOption;
     @Enumerated(EnumType.STRING)
     private FeeStructure feeStructure;
-
 }
-

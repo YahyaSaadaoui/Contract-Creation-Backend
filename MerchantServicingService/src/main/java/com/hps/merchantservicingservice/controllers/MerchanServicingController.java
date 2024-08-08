@@ -1,40 +1,44 @@
 package com.hps.merchantservicingservice.controllers;
 
 
-import com.hps.merchantservicingservice.Enums.FeeStructure;
-import com.hps.merchantservicingservice.Enums.SettlementOption;
+
 import com.hps.merchantservicingservice.dto.MerchantDTO;
+import com.hps.merchantservicingservice.entities.Merchant;
 import com.hps.merchantservicingservice.services.MerchantServicingService;
+import jakarta.annotation.PostConstruct;
+import org.apache.kafka.clients.admin.NewTopic;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.kafka.core.KafkaAdmin;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/merchants/servicing")
 public class MerchanServicingController {
 
-        @Autowired
-        private MerchantServicingService merchantServicingService;
+    @Autowired
+    private MerchantServicingService merchantServicingService;
 
-    @PostMapping("/create")
-    public ResponseEntity<MerchantDTO> createMerchant() {
-        // Create a MerchantDTO object with real data
-        MerchantDTO merchantDTO = new MerchantDTO();
-        merchantDTO.setMerchantId(1);
-        merchantDTO.setMerchantNumber("123456");
-        merchantDTO.setMerchantName("Test Merchant");
-        merchantDTO.setContactInfo("test@example.com");
-        merchantDTO.setBankAccountDetails("1234-5678-9012-3456");
-        merchantDTO.setContractStatus("Active");
-        merchantDTO.setUpdated_at(new java.sql.Date(System.currentTimeMillis()));
-        merchantDTO.setCreated_by(new java.sql.Date(System.currentTimeMillis()));
-        merchantDTO.setSettlementOption(SettlementOption.ON_DROP);
-        merchantDTO.setFeeStructure(FeeStructure.STANDARD);
+    @PutMapping("/merchantUpdated/{id}")
+    public Merchant updateMerchant(@PathVariable long id, @RequestBody MerchantDTO merchantDTO) {
+        return merchantServicingService.updateMerchant(id, merchantDTO);
+    }
+    @Autowired
+    private KafkaAdmin kafkaAdmin;
+    @Autowired
+    private Map<String, Object> adminConfigs;
 
-        MerchantDTO createdMerchant = merchantServicingService.createMerchant(merchantDTO);
-        return ResponseEntity.ok(createdMerchant);
+
+    @PostConstruct
+    public void createTopic() {
+        String topicName = "merchant-servcing-service";
+        int numPartitions = 1;
+        short replicationFactor = 1;
+
+        NewTopic newTopic = new NewTopic(topicName, numPartitions, replicationFactor);
+        kafkaAdmin.createOrModifyTopics(newTopic);
     }
 }
+
 

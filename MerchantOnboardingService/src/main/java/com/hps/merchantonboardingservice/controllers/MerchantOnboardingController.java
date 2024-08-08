@@ -1,48 +1,83 @@
 package com.hps.merchantonboardingservice.controllers;
+import com.hps.merchantonboardingservice.dto.ContractDTO;
 import com.hps.merchantonboardingservice.dto.MerchantDTO;
 
+import com.hps.merchantonboardingservice.entities.Contract;
+import com.hps.merchantonboardingservice.entities.Merchant;
 import com.hps.merchantonboardingservice.services.MerchantOnboardingService;
+import jakarta.annotation.PostConstruct;
+import org.apache.kafka.clients.admin.NewTopic;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/merchants/onboarding")
 public class MerchantOnboardingController {
     @Autowired
     private MerchantOnboardingService merchantService;
+    @Autowired
+    private KafkaAdmin kafkaAdmin;
+    @Autowired
+    private Map<String, Object> adminConfigs;
 
 
-    @PostMapping
-    public ResponseEntity<MerchantDTO> createMerchant(@RequestBody MerchantDTO merchantDTO) {
-        MerchantDTO createdMerchant = merchantService.createMerchant(merchantDTO);
+    @PostConstruct
+    public void createTopic() {
+        String topicName = "merchant-onboarding";
+        int numPartitions = 1;
+        short replicationFactor = 1;
+
+        NewTopic newTopic = new NewTopic(topicName, numPartitions, replicationFactor);
+        kafkaAdmin.createOrModifyTopics(newTopic);
+    }
+
+
+    @PostMapping("/contracts")
+    public ResponseEntity<Contract> createContract(@RequestBody ContractDTO contractDTO) {
+        Contract createdContract = merchantService.createContract(contractDTO);
+        return ResponseEntity.created(URI.create("/contracts/" + createdContract.getContractID())).body(createdContract);
+    }
+
+
+    @PostMapping("/merchants")
+    public ResponseEntity<Merchant> createMerchant(@RequestBody MerchantDTO merchantDTO) {
+        Merchant createdMerchant = merchantService.createMerchant(merchantDTO);
         return ResponseEntity.created(URI.create("/merchants/" + createdMerchant.getMerchantId())).body(createdMerchant);
     }
 
 
-    @GetMapping("/{id}")
-    public ResponseEntity<MerchantDTO> getMerchantById(@PathVariable Long id) throws Exception {
-        MerchantDTO merchantDTO = merchantService.getMerchantById(id);
-        return ResponseEntity.ok(merchantDTO);
+
+    @PutMapping("/contractUpdated/{id}")
+    public Contract updateContract(@PathVariable long id, @RequestBody ContractDTO contractDTO) {
+        return merchantService.updateContract(id, contractDTO);
     }
 
 
-
-    @PutMapping("/{id}")
-    public ResponseEntity<MerchantDTO> updateMerchant(@PathVariable Long id, @RequestBody MerchantDTO merchantDTO) throws Exception {
-        MerchantDTO updatedMerchant = merchantService.updateMerchant(id, merchantDTO);
-        return ResponseEntity.ok(updatedMerchant);
+    @PutMapping("/merchantUpdated/{id}")
+    public Merchant updateMerchant(@PathVariable long id, @RequestBody MerchantDTO merchantDTO) {
+        return merchantService.updateMerchant(id, merchantDTO);
     }
 
 
+    @DeleteMapping("/contracts/{id}")
+    public ResponseEntity<Void> deleteContract(@PathVariable Long id) {
+        merchantService.deleteContract(id);
+        return ResponseEntity.noContent().build();
+    }
 
-    @DeleteMapping("/{id}")
+
+    @DeleteMapping("/merchants/{id}")
     public ResponseEntity<Void> deleteMerchant(@PathVariable Long id) {
         merchantService.deleteMerchant(id);
         return ResponseEntity.noContent().build();
     }
+
+
 }

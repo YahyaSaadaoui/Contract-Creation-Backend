@@ -1,7 +1,7 @@
-package com.hps.merchantonboardingservice.dto;
+package com.hps.tmsservice.dto;
 
-import com.hps.merchantonboardingservice.Enums.FeeStructure;
-import com.hps.merchantonboardingservice.Enums.SettlementOption;
+import com.hps.tmsservice.Enums.FeeStructure;
+import com.hps.tmsservice.Enums.SettlementOption;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import lombok.AllArgsConstructor;

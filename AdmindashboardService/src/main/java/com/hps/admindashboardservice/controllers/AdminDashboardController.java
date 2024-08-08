@@ -47,6 +47,5 @@ public class AdminDashboardController {
         NewTopic newTopic = new NewTopic(topicName, numPartitions, replicationFactor);
         kafkaAdmin.createOrModifyTopics(newTopic);
 
-        // You can add any additional topic creation logic here if required
     }
 }

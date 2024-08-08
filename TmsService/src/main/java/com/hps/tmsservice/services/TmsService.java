@@ -1,16 +1,12 @@
-package com.hps.merchantonboardingservice.services;
+package com.hps.tmsservice.services;
 
-import com.hps.merchantonboardingservice.dto.ContractDTO;
-import com.hps.merchantonboardingservice.dto.MerchantDTO;
-import com.hps.merchantonboardingservice.entities.Contract;
-import com.hps.merchantonboardingservice.entities.Merchant;
-import com.hps.merchantonboardingservice.events.*;
-import com.hps.merchantonboardingservice.mapper.ContractMapper;
-import com.hps.merchantonboardingservice.mapper.MerchantMapper;
-import com.hps.merchantonboardingservice.repos.ContractRepo;
-import com.hps.merchantonboardingservice.repos.MerchantRepo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.hps.tmsservice.dto.DeviceDTO;
+import com.hps.tmsservice.dto.MerchantDTO;
+import com.hps.tmsservice.entities.Device;
+import com.hps.tmsservice.entities.Merchant;
+import com.hps.tmsservice.events.*;
+import com.hps.tmsservice.repos.DeviceRepo;
+import com.hps.tmsservice.repos.MerchantRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
@@ -18,13 +14,13 @@ import org.springframework.stereotype.Service;
 import java.util.Optional;
 
 @Service
-public class MerchantOnboardingService {
+public class TmsService {
 
     @Autowired
     private MerchantRepo merchantRepository;
 
     @Autowired
-    private ContractRepo contractRepository;
+    private DeviceRepo deviceRepo;
 
     @Autowired
     private KafkaProducerService kafkaProducerService;
@@ -76,52 +72,55 @@ public class MerchantOnboardingService {
         }
     }
 
+
+    public Device createDevice(DeviceDTO deviceDTO) {
+        Device newDevice= new Device(
+                deviceDTO.getDeviceNumber(),
+                deviceDTO.getLocation(),
+                deviceDTO.getStatus(),
+                deviceDTO.getMerchantNumber()
+        );
+
+        Device savedDevice = deviceRepo.save(newDevice);
+        kafkaProducerService.sendContractCreatedEvent(new DeviceCreatedEvent(deviceDTO));
+        return savedDevice;
+    }
+
+    public Device updateContract(long id, DeviceDTO deviceDTO) {
+        Optional<Device> existingDeviceOpt = deviceRepo.findById(id);
+        if (existingDeviceOpt.isPresent()) {
+            Device existingDevice = existingDeviceOpt.get();
+            existingDevice.setDeviceNumber(deviceDTO.getDeviceNumber());
+            existingDevice.setLocation(deviceDTO.getLocation());
+            existingDevice.setStatus(deviceDTO.getStatus());
+            existingDevice.setMerchantNumber( deviceDTO.getMerchantNumber());
+
+            Device updatedContract = deviceRepo.save(existingDevice);
+            kafkaProducerService.sendContractUpdatedEvent(new DeviceUpdatedEvent(deviceDTO));
+            return updatedContract;
+        } else {
+            throw new RuntimeException("Device not found");
+        }
+    }
+
+    public void deleteDevice(long id) {
+        deviceRepo.deleteById(id);
+        kafkaProducerService.sendContractDeletedEvent(new DeviceDeletedEvent(id));
+    }
     public void deleteMerchant(long id) {
         merchantRepository.deleteById(id);
         kafkaProducerService.sendMerchantDeletedEvent(new MerchantDeletedEvent(id));
     }
-
-    public Contract createContract(ContractDTO contractDTO) {
-        Contract newContract = new Contract(
-                contractDTO.getMerchantID(),
-                contractDTO.getContractID(),
-                contractDTO.getMerchantDDA(),
-                contractDTO.getContractStarts(),
-                contractDTO.getContractEnds(),
-                contractDTO.getSettlementOption(),
-                contractDTO.getFeeStructure()
-        );
-
-        Contract savedContract = contractRepository.save(newContract);
-        kafkaProducerService.sendContractCreatedEvent(new ContractCreatedEvent(contractDTO));
-        return savedContract;
-    }
-
-    public Contract updateContract(long id, ContractDTO contractDTO) {
-        Optional<Contract> existingContractOpt = contractRepository.findById(id);
-        if (existingContractOpt.isPresent()) {
-            Contract existingContract = existingContractOpt.get();
-            existingContract.setMerchantID(contractDTO.getMerchantID());
-            existingContract.setContractID(contractDTO.getContractID());
-            existingContract.setMerchantDDA(contractDTO.getMerchantDDA());
-            existingContract.setContractStarts(contractDTO.getContractStarts());
-            existingContract.setContractEnds(contractDTO.getContractEnds());
-            existingContract.setSettlementOption(contractDTO.getSettlementOption());
-            existingContract.setFeeStructure(contractDTO.getFeeStructure());
-
-            Contract updatedContract = contractRepository.save(existingContract);
-            kafkaProducerService.sendContractUpdatedEvent(new ContractUpdatedEvent(contractDTO));
-            return updatedContract;
-        } else {
-            throw new RuntimeException("Contract not found");
+    @KafkaListener(topics = {"merchantCreated", "merchantUpdated", "merchantDeleted"}, groupId = "merchant-onboarding")
+    public void listenMerchantOnBoardingEvents(Object event) {
+        if (event instanceof MerchantUpdatedEvent) {
+            MerchantUpdatedEvent merchantUpdatedEvent = (MerchantUpdatedEvent) event;
+            this.updateMerchant(merchantUpdatedEvent.getMerchantDTO().getMerchantId(), merchantUpdatedEvent.getMerchantDTO());
+        } else if (event instanceof MerchantDeletedEvent) {
+            MerchantDeletedEvent merchantDeletedEvent = (MerchantDeletedEvent) event;
+            this.deleteMerchant(merchantDeletedEvent.getMerchantId());
         }
     }
-
-    public void deleteContract(long id) {
-        contractRepository.deleteById(id);
-        kafkaProducerService.sendContractDeletedEvent(new ContractDeletedEvent(id));
-    }
-
     @KafkaListener(topics = {"merchantCreated", "merchantUpdated", "merchantDeleted"}, groupId = "merchant-servcing-service")
     public void listenMerchantServicingServiceEvents(Object event) {
         if (event instanceof MerchantUpdatedEvent) {
@@ -132,4 +131,5 @@ public class MerchantOnboardingService {
             this.deleteMerchant(merchantDeletedEvent.getMerchantId());
         }
     }
+
 }
