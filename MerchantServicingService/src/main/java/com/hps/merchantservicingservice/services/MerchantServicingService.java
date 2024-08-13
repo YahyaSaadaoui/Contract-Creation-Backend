@@ -1,62 +1,50 @@
 package com.hps.merchantservicingservice.services;
 
-import com.hps.merchantservicingservice.Repo.MerchantRepository;
-import com.hps.merchantservicingservice.dto.MerchantDTO;
-import com.hps.merchantservicingservice.entities.Merchant;
-import com.hps.merchantservicingservice.events.MerchantDeletedEvent;
-import com.hps.merchantservicingservice.events.MerchantUpdatedEvent;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.stereotype.Service;
 
-import java.util.Optional;
+import com.hps.merchantservicingservice.dto.ActivityDTO;
+import com.hps.merchantservicingservice.dto.AdresseDTO;
+import com.hps.merchantservicingservice.dto.MerchantDTO;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.stream.Collectors;
+
 
 @Service
 public class MerchantServicingService {
     @Autowired
-    private MerchantRepository merchantRepository;
-    @Autowired
-    private KafkaProducerService kafkaProducerService;
+    private RestTemplate restTemplate;
 
+    private static final String GATEWAY_URL = "http://localhost:8223/api/merchants/onboarding/merchantUpdated/";
 
-    public Merchant updateMerchant(long id, MerchantDTO merchantDTO) {
-        Optional<Merchant> existingMerchantOpt = merchantRepository.findById(id);
-        if (existingMerchantOpt.isPresent()) {
-            Merchant existingMerchant = existingMerchantOpt.get();
-            existingMerchant.setMerchantNumber(merchantDTO.getMerchantNumber());
-            existingMerchant.setMerchantName(merchantDTO.getMerchantName());
-            existingMerchant.setContactInfo(merchantDTO.getContactInfo());
-            existingMerchant.setBankAccountDetails(merchantDTO.getBankAccountDetails());
-            existingMerchant.setContractStatus(merchantDTO.getContractStatus());
-            existingMerchant.setUpdated_at(merchantDTO.getUpdated_at());
-            existingMerchant.setDeleted_at(merchantDTO.getDeleted_at());
-            existingMerchant.setDeleted_by(merchantDTO.getDeleted_by());
-            existingMerchant.setCreated_by(merchantDTO.getCreated_by());
-            existingMerchant.setUpdated_by(merchantDTO.getUpdated_by());
-            existingMerchant.setSettlementOption(merchantDTO.getSettlementOption());
-            existingMerchant.setFeeStructure(merchantDTO.getFeeStructure());
+    public void updateMerchant(Long id, MerchantDTO updateRequest) {
+        String url = GATEWAY_URL + id;
 
-            Merchant updatedMerchant = merchantRepository.save(existingMerchant);
-            kafkaProducerService.sendMerchantUpdatedEvent(new MerchantUpdatedEvent(merchantDTO));
-            return updatedMerchant;
-        } else {
-            throw new RuntimeException("Merchant not found");
-        }
+        MerchantDTO merchantDTO = new MerchantDTO();
+        merchantDTO.setId(id);
+        merchantDTO.setStatus(updateRequest.getStatus());
+        merchantDTO.setTaxRate(updateRequest.getTaxRate());
+        merchantDTO.setContactInfo(updateRequest.getContactInfo());
+        merchantDTO.setBankAccountDetails(updateRequest.getBankAccountDetails());
+        merchantDTO.setAddresses(updateRequest.getAddresses().stream()
+                .map(addressDTO -> new AdresseDTO(
+                        addressDTO.getStreet(),
+                        addressDTO.getCity(),
+                        addressDTO.getState(),
+                        addressDTO.getCountry(),
+                        addressDTO.getZipCode(),
+                        addressDTO.getEmail(),
+                        addressDTO.getPhoneNumber(),
+                        addressDTO.getFaxNumber()
+                )).collect(Collectors.toList()));
+        merchantDTO.setActivities(updateRequest.getActivities().stream()
+                .map(activityDTO -> new ActivityDTO(
+                        activityDTO.getActivityName()
+                )).collect(Collectors.toList()));
+
+        restTemplate.put(url, merchantDTO);
     }
 
-
-    public void deleteMerchant(long id) {
-        merchantRepository.deleteById(id);
-        kafkaProducerService.sendMerchantDeletedEvent(new MerchantDeletedEvent(id));
-    }
-    @KafkaListener(topics = {"merchantCreated", "merchantUpdated", "merchantDeleted"}, groupId = "merchant-onboarding")
-    public void listenMerchantEvents(Object event) {
-        if (event instanceof MerchantUpdatedEvent) {
-            MerchantUpdatedEvent merchantUpdatedEvent = (MerchantUpdatedEvent) event;
-            this.updateMerchant(merchantUpdatedEvent.getMerchantDTO().getMerchantId(), merchantUpdatedEvent.getMerchantDTO());
-        } else if (event instanceof MerchantDeletedEvent) {
-            MerchantDeletedEvent merchantDeletedEvent = (MerchantDeletedEvent) event;
-            this.deleteMerchant(merchantDeletedEvent.getMerchantId());
-        }
-    }
 }

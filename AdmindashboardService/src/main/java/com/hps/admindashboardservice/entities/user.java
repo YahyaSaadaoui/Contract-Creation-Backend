@@ -1,9 +1,12 @@
 package com.hps.admindashboardservice.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 @Data
 @Table(name = "users")
@@ -27,4 +30,9 @@ public class user {
     private String created_by;
     private String updated_by;
     private String last_login_attempt_time;
+
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private settings settings;
 }

@@ -1,76 +1,86 @@
 package com.hps.admindashboardservice.services;
+import com.hps.admindashboardservice.dto.SettingsDTO;
 import com.hps.admindashboardservice.dto.UserDTO;
+import com.hps.admindashboardservice.entities.settings;
 import com.hps.admindashboardservice.entities.user;
 import com.hps.admindashboardservice.events.UserCreatedEvent;
 import com.hps.admindashboardservice.events.UserDeletedEvent;
 import com.hps.admindashboardservice.events.UserUpdatedEvent;
+import com.hps.admindashboardservice.repos.settingsRepo;
 import com.hps.admindashboardservice.repos.userRepo;
+//import com.hps.kafka.service.CentralKafkaProducerService;
+import com.hps.kafka.service.CentralKafkaProducerService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
+
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
 @Service
 public class AdminDashboardService {
-
     @Autowired
     private userRepo userRepository;
 
     @Autowired
-    private KafkaProducerService kafkaProducerService;
+    private settingsRepo settingsRepository;
 
-    public user createUser(UserDTO userDTO) {
-        user newUser = new user(
-                userDTO.getId(),
-                userDTO.getUsername(),
-                userDTO.getPassword(),
-                userDTO.getEmail(),
-                userDTO.getRole(),
-                userDTO.getPermissions(),
-                userDTO.getStatus(),
-                userDTO.getCreated_at(),
-                userDTO.getUpdated_at(),
-                userDTO.getDeleted_at(),
-                userDTO.getDeleted_by(),
-                userDTO.getCreated_by(),
-                userDTO.getUpdated_by(),
-                userDTO.getLast_login_attempt_time()
-        );
+    @Autowired
+    private CentralKafkaProducerService kafkaProducerService;
 
-        user savedUser = userRepository.save(newUser);
-        kafkaProducerService.sendUserCreatedEvent(new UserCreatedEvent(userDTO));
-        return savedUser;
+
+    public UserDTO createUser(UserDTO userDTO) {
+        user user = new user();
+        user.setUsername(userDTO.getUsername());
+        user.setPassword(userDTO.getPassword());
+        user.setEmail(userDTO.getEmail());
+        user.setRole(userDTO.getRole());
+        user.setPermissions(userDTO.getPermissions());
+        user.setStatus(userDTO.getStatus());
+        user.setCreated_at(userDTO.getCreated_at());
+        user.setUpdated_at(userDTO.getUpdated_at());
+        user.setDeleted_at(userDTO.getDeleted_at());
+        user.setDeleted_by(userDTO.getDeleted_by());
+        user.setCreated_by(userDTO.getCreated_by());
+        user.setUpdated_by(userDTO.getUpdated_by());
+        user.setLast_login_attempt_time(userDTO.getLast_login_attempt_time());
+
+        // Create and set Settings
+        settings settings = userDTO.getSettings();
+        settings.setUser(user);
+        user.setSettings(settings);
+
+        settingsRepository.save(settings); // Save settings first
+        userRepository.save(user); // Save user with the reference to settings
+
+        return userDTO;
     }
 
-    public user updateUser(long id, UserDTO userDTO) {
-        Optional<user> existingUserOpt = userRepository.findById(id);
-        if (existingUserOpt.isPresent()) {
-            user existingUser = existingUserOpt.get();
-            existingUser.setUsername(userDTO.getUsername());
-            existingUser.setPassword(userDTO.getPassword());
-            existingUser.setEmail(userDTO.getEmail());
-            existingUser.setRole(userDTO.getRole());
-            existingUser.setPermissions(userDTO.getPermissions());
-            existingUser.setStatus(userDTO.getStatus());
-            existingUser.setCreated_at(userDTO.getCreated_at());
-            existingUser.setUpdated_at(userDTO.getUpdated_at());
-            existingUser.setDeleted_at(userDTO.getDeleted_at());
-            existingUser.setDeleted_by(userDTO.getDeleted_by());
-            existingUser.setCreated_by(userDTO.getCreated_by());
-            existingUser.setUpdated_by(userDTO.getUpdated_by());
-            existingUser.setLast_login_attempt_time(userDTO.getLast_login_attempt_time());
+    public UserDTO updateUser(UserDTO userDTO) {
+        user user = userRepository.findById(userDTO.getId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-            user updatedUser = userRepository.save(existingUser);
-            kafkaProducerService.sendUserUpdatedEvent(new UserUpdatedEvent(userDTO));
-            return updatedUser;
-        } else {
-            throw new RuntimeException("User not found");
-        }
-    }
+        user.setUsername(userDTO.getUsername());
+        user.setPassword(userDTO.getPassword());
+        user.setEmail(userDTO.getEmail());
+        user.setRole(userDTO.getRole());
+        user.setPermissions(userDTO.getPermissions());
+        user.setStatus(userDTO.getStatus());
+        user.setCreated_at(userDTO.getCreated_at());
+        user.setUpdated_at(userDTO.getUpdated_at());
+        user.setDeleted_at(userDTO.getDeleted_at());
+        user.setDeleted_by(userDTO.getDeleted_by());
+        user.setCreated_by(userDTO.getCreated_by());
+        user.setUpdated_by(userDTO.getUpdated_by());
+        user.setLast_login_attempt_time(userDTO.getLast_login_attempt_time());
 
-    public void deleteUser(long id) {
-        userRepository.deleteById(id);
-        kafkaProducerService.sendUserDeletedEvent(new UserDeletedEvent(id));
+        // Update settings
+        settings settings = userDTO.getSettings();
+        settings.setUser(user);
+        user.setSettings(settings);
+
+        settingsRepository.save(settings); // Save settings first
+        userRepository.save(user); // Save user with the updated settings
+
+        return userDTO;
     }
 }

@@ -4,18 +4,19 @@ import com.hps.merchantonboardingservice.dto.ContractDTO;
 import com.hps.merchantonboardingservice.dto.MerchantDTO;
 import com.hps.merchantonboardingservice.entities.Contract;
 import com.hps.merchantonboardingservice.entities.Merchant;
-import com.hps.merchantonboardingservice.events.*;
-import com.hps.merchantonboardingservice.mapper.ContractMapper;
+import com.hps.merchantonboardingservice.entities.activities;
+import com.hps.merchantonboardingservice.entities.addresses;
 import com.hps.merchantonboardingservice.mapper.MerchantMapper;
 import com.hps.merchantonboardingservice.repos.ContractRepo;
 import com.hps.merchantonboardingservice.repos.MerchantRepo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
+import java.sql.Date;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class MerchantOnboardingService {
@@ -26,60 +27,186 @@ public class MerchantOnboardingService {
     @Autowired
     private ContractRepo contractRepository;
 
+//    @Autowired
+//    private CentralKafkaProducerService kafkaProducerService;
+
     @Autowired
-    private KafkaProducerService kafkaProducerService;
+    private MerchantMapper merchantMapper;
 
     public Merchant createMerchant(MerchantDTO merchantDTO) {
-        Merchant newMerchant = new Merchant(
-                merchantDTO.getMerchantId(),
-                merchantDTO.getMerchantNumber(),
-                merchantDTO.getMerchantName(),
-                merchantDTO.getContactInfo(),
-                merchantDTO.getBankAccountDetails(),
-                merchantDTO.getContractStatus(),
-                merchantDTO.getUpdated_at(),
-                merchantDTO.getDeleted_at(),
-                merchantDTO.getDeleted_by(),
-                merchantDTO.getCreated_by(),
-                merchantDTO.getUpdated_by(),
-                merchantDTO.getSettlementOption(),
-                merchantDTO.getFeeStructure()
-        );
+        Merchant newMerchant = merchantMapper.toEntity(merchantDTO);
 
-        Merchant savedMerchant = merchantRepository.save(newMerchant);
-        kafkaProducerService.sendMerchantCreatedEvent(new MerchantCreatedEvent(merchantDTO));
-        return savedMerchant;
+        List<addresses> addressesList = (merchantDTO.getAddresses() != null) ?
+                merchantDTO.getAddresses().stream()
+                        .map(adresseDTO -> {
+                            addresses address = new addresses();
+                            address.setStreet(adresseDTO.getStreet());
+                            address.setCity(adresseDTO.getCity());
+                            address.setState(adresseDTO.getState());
+                            address.setCountry(adresseDTO.getCountry());
+                            address.setZipCode(adresseDTO.getZipCode());
+                            address.setEmail(adresseDTO.getEmail());
+                            address.setPhoneNumber(adresseDTO.getPhoneNumber());
+                            address.setFaxNumber(adresseDTO.getFaxNumber());
+                            address.setMerchant(newMerchant);
+                            return address;
+                        }).collect(Collectors.toList()) : new ArrayList<>();
+
+        newMerchant.setAddresses(addressesList);
+
+        List<activities> activitiesList = (merchantDTO.getActivities() != null) ?
+                merchantDTO.getActivities().stream()
+                        .map(activitiesDTO -> {
+                            activities activity = new activities();
+                            activity.setActivityName(activitiesDTO.getActivityName());
+                            activity.setMerchant(newMerchant);
+                            return activity;
+                        }).collect(Collectors.toList()) : new ArrayList<>();
+
+        newMerchant.setActivities(activitiesList);
+
+        // Set all fields from DTO
+        newMerchant.setMerchantNumber(merchantDTO.getMerchantNumber());
+        newMerchant.setMerchantName(merchantDTO.getMerchantName());
+        newMerchant.setStatus(merchantDTO.getStatus());
+        newMerchant.setTaxRate(merchantDTO.getTaxRate());
+        newMerchant.setContactInfo(merchantDTO.getContactInfo());
+        newMerchant.setBankAccountDetails(merchantDTO.getBankAccountDetails());
+        newMerchant.setContractStatus(merchantDTO.getContractStatus());
+        newMerchant.setSettlementOption(merchantDTO.getSettlementOption());
+        newMerchant.setFeeStructure(merchantDTO.getFeeStructure());
+
+        newMerchant.setUpdated_at(new Date(System.currentTimeMillis()));
+        newMerchant.setDeleted_at(null);
+        newMerchant.setDeleted_by(null);
+        newMerchant.setCreated_by(new Date(System.currentTimeMillis()));
+        newMerchant.setUpdated_by(null);
+
+        return merchantRepository.save(newMerchant);
+//        kafkaProducerService.sendEvent("ContractCreationTopic", new MerchantCreatedEvent(merchantDTO));
     }
 
     public Merchant updateMerchant(long id, MerchantDTO merchantDTO) {
         Optional<Merchant> existingMerchantOpt = merchantRepository.findById(id);
         if (existingMerchantOpt.isPresent()) {
             Merchant existingMerchant = existingMerchantOpt.get();
+            merchantMapper.updateEntityFromDto(merchantDTO, existingMerchant);
+
+            // Ensure addresses and activities are not null
+            List<addresses> addressesList = (merchantDTO.getAddresses() != null) ?
+                    merchantDTO.getAddresses().stream()
+                            .map(adresseDTO -> {
+                                addresses address = new addresses();
+                                address.setStreet(adresseDTO.getStreet());
+                                address.setCity(adresseDTO.getCity());
+                                address.setState(adresseDTO.getState());
+                                address.setCountry(adresseDTO.getCountry());
+                                address.setZipCode(adresseDTO.getZipCode());
+                                address.setEmail(adresseDTO.getEmail());
+                                address.setPhoneNumber(adresseDTO.getPhoneNumber());
+                                address.setFaxNumber(adresseDTO.getFaxNumber());
+                                address.setMerchant(existingMerchant);
+                                return address;
+                            }).collect(Collectors.toList()) : new ArrayList<>();
+
+            existingMerchant.getAddresses().clear();
+            existingMerchant.getAddresses().addAll(addressesList);
+
+            List<activities> activitiesList = (merchantDTO.getActivities() != null) ?
+                    merchantDTO.getActivities().stream()
+                            .map(activitiesDTO -> {
+                                activities activity = new activities();
+                                activity.setActivityName(activitiesDTO.getActivityName());
+                                activity.setMerchant(existingMerchant);
+                                return activity;
+                            }).collect(Collectors.toList()) : new ArrayList<>();
+
+            existingMerchant.getActivities().clear();
+            existingMerchant.getActivities().addAll(activitiesList);
+
+            // Update all fields
             existingMerchant.setMerchantNumber(merchantDTO.getMerchantNumber());
             existingMerchant.setMerchantName(merchantDTO.getMerchantName());
+            existingMerchant.setStatus(merchantDTO.getStatus());
+            existingMerchant.setTaxRate(merchantDTO.getTaxRate());
             existingMerchant.setContactInfo(merchantDTO.getContactInfo());
             existingMerchant.setBankAccountDetails(merchantDTO.getBankAccountDetails());
             existingMerchant.setContractStatus(merchantDTO.getContractStatus());
-            existingMerchant.setUpdated_at(merchantDTO.getUpdated_at());
-            existingMerchant.setDeleted_at(merchantDTO.getDeleted_at());
-            existingMerchant.setDeleted_by(merchantDTO.getDeleted_by());
-            existingMerchant.setCreated_by(merchantDTO.getCreated_by());
-            existingMerchant.setUpdated_by(merchantDTO.getUpdated_by());
             existingMerchant.setSettlementOption(merchantDTO.getSettlementOption());
             existingMerchant.setFeeStructure(merchantDTO.getFeeStructure());
 
+            // Update timestamp fields if needed
+            existingMerchant.setUpdated_at(new Date(System.currentTimeMillis()));
+
             Merchant updatedMerchant = merchantRepository.save(existingMerchant);
-            kafkaProducerService.sendMerchantUpdatedEvent(new MerchantUpdatedEvent(merchantDTO));
             return updatedMerchant;
+        } else {
+            throw new RuntimeException("Merchant not found");
+        }
+//            kafkaProducerService.sendEvent("ContractCreationTopic", new MerchantUpdatedEvent(merchantDTO));
+    }
+
+    public void deleteMerchant(long id) {
+        merchantRepository.deleteById(id);
+//        kafkaProducerService.sendEvent("ContractCreationTopic", new MerchantDeletedEvent(id));
+    }
+
+
+    // Merchant Servicing Update To Merchant
+    public Merchant updateMerchantMSS(long id, MerchantDTO merchantDTO) {
+        Optional<Merchant> existingMerchantOpt = merchantRepository.findById(id);
+        if (existingMerchantOpt.isPresent()) {
+            Merchant existingMerchant = existingMerchantOpt.get();
+            merchantMapper.updateEntityFromDto(merchantDTO, existingMerchant);
+
+            // Ensure addresses is not null
+            List<addresses> addressesList = (merchantDTO.getAddresses() != null) ?
+                    merchantDTO.getAddresses().stream()
+                            .map(adresseDTO -> {
+                                addresses address = new addresses();
+                                address.setStreet(adresseDTO.getStreet());
+                                address.setCity(adresseDTO.getCity());
+                                address.setState(adresseDTO.getState());
+                                address.setCountry(adresseDTO.getCountry());
+                                address.setZipCode(adresseDTO.getZipCode());
+                                address.setEmail(adresseDTO.getEmail());
+                                address.setPhoneNumber(adresseDTO.getPhoneNumber());
+                                address.setFaxNumber(adresseDTO.getFaxNumber());
+                                address.setMerchant(existingMerchant);
+                                return address;
+                            }).collect(Collectors.toList()) : new ArrayList<>();
+
+            // Clear existing addresses and add new ones
+            existingMerchant.getAddresses().clear();
+            existingMerchant.getAddresses().addAll(addressesList);
+
+            // Ensure activities is not null
+            List<activities> activitiesList = (merchantDTO.getActivities() != null) ?
+                    merchantDTO.getActivities().stream()
+                            .map(activitiesDTO -> {
+                                activities activity = new activities();
+                                activity.setActivityName(activitiesDTO.getActivityName());
+                                activity.setMerchant(existingMerchant);
+                                return activity;
+                            }).collect(Collectors.toList()) : new ArrayList<>();
+
+            // Clear existing activities and add new ones
+            existingMerchant.getActivities().clear();
+            existingMerchant.getActivities().addAll(activitiesList);
+
+            return merchantRepository.save(existingMerchant);
         } else {
             throw new RuntimeException("Merchant not found");
         }
     }
 
-    public void deleteMerchant(long id) {
-        merchantRepository.deleteById(id);
-        kafkaProducerService.sendMerchantDeletedEvent(new MerchantDeletedEvent(id));
-    }
+
+
+
+
+
+
+
 
     public Contract createContract(ContractDTO contractDTO) {
         Contract newContract = new Contract(
@@ -93,7 +220,7 @@ public class MerchantOnboardingService {
         );
 
         Contract savedContract = contractRepository.save(newContract);
-        kafkaProducerService.sendContractCreatedEvent(new ContractCreatedEvent(contractDTO));
+//        kafkaProducerService.sendEvent("ContractCreationTopic", new ContractCreatedEvent(contractDTO));
         return savedContract;
     }
 
@@ -110,7 +237,7 @@ public class MerchantOnboardingService {
             existingContract.setFeeStructure(contractDTO.getFeeStructure());
 
             Contract updatedContract = contractRepository.save(existingContract);
-            kafkaProducerService.sendContractUpdatedEvent(new ContractUpdatedEvent(contractDTO));
+//            kafkaProducerService.sendEvent("ContractCreationTopic", new ContractUpdatedEvent(contractDTO));
             return updatedContract;
         } else {
             throw new RuntimeException("Contract not found");
@@ -119,17 +246,7 @@ public class MerchantOnboardingService {
 
     public void deleteContract(long id) {
         contractRepository.deleteById(id);
-        kafkaProducerService.sendContractDeletedEvent(new ContractDeletedEvent(id));
+//        kafkaProducerService.sendEvent("ContractCreationTopic", new ContractDeletedEvent(id));
     }
 
-    @KafkaListener(topics = {"merchantCreated", "merchantUpdated", "merchantDeleted"}, groupId = "merchant-servcing-service")
-    public void listenMerchantServicingServiceEvents(Object event) {
-        if (event instanceof MerchantUpdatedEvent) {
-            MerchantUpdatedEvent merchantUpdatedEvent = (MerchantUpdatedEvent) event;
-            this.updateMerchant(merchantUpdatedEvent.getMerchantDTO().getMerchantId(), merchantUpdatedEvent.getMerchantDTO());
-        } else if (event instanceof MerchantDeletedEvent) {
-            MerchantDeletedEvent merchantDeletedEvent = (MerchantDeletedEvent) event;
-            this.deleteMerchant(merchantDeletedEvent.getMerchantId());
-        }
-    }
 }

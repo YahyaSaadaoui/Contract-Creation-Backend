@@ -1,10 +1,13 @@
 package com.hps.admindashboardservice.dto;
 
 
+import com.hps.admindashboardservice.entities.settings;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import lombok.Data;
+
+import java.util.List;
 
 @Data
 public class UserDTO {
@@ -24,4 +27,5 @@ public class UserDTO {
     private String created_by;
     private String updated_by;
     private String last_login_attempt_time;
+    private settings settings;
 }

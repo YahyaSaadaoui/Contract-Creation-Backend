@@ -22,21 +22,21 @@ import java.util.Map;
 public class MerchantOnboardingController {
     @Autowired
     private MerchantOnboardingService merchantService;
-    @Autowired
-    private KafkaAdmin kafkaAdmin;
-    @Autowired
-    private Map<String, Object> adminConfigs;
-
-
-    @PostConstruct
-    public void createTopic() {
-        String topicName = "merchant-onboarding";
-        int numPartitions = 1;
-        short replicationFactor = 1;
-
-        NewTopic newTopic = new NewTopic(topicName, numPartitions, replicationFactor);
-        kafkaAdmin.createOrModifyTopics(newTopic);
-    }
+//    @Autowired
+//    private KafkaAdmin kafkaAdmin;
+//    @Autowired
+//    private Map<String, Object> adminConfigs;
+//
+//
+//    @PostConstruct
+//    public void createTopic() {
+//        String topicName = "merchant-onboarding";
+//        int numPartitions = 1;
+//        short replicationFactor = 1;
+//
+//        NewTopic newTopic = new NewTopic(topicName, numPartitions, replicationFactor);
+//        kafkaAdmin.createOrModifyTopics(newTopic);
+//    }
 
 
     @PostMapping("/contracts")
@@ -49,10 +49,8 @@ public class MerchantOnboardingController {
     @PostMapping("/merchants")
     public ResponseEntity<Merchant> createMerchant(@RequestBody MerchantDTO merchantDTO) {
         Merchant createdMerchant = merchantService.createMerchant(merchantDTO);
-        return ResponseEntity.created(URI.create("/merchants/" + createdMerchant.getMerchantId())).body(createdMerchant);
+        return ResponseEntity.created(URI.create("/merchants/" + createdMerchant.getMerchantNumber())).body(createdMerchant);
     }
-
-
 
     @PutMapping("/contractUpdated/{id}")
     public Contract updateContract(@PathVariable long id, @RequestBody ContractDTO contractDTO) {
@@ -61,8 +59,13 @@ public class MerchantOnboardingController {
 
 
     @PutMapping("/merchantUpdated/{id}")
-    public Merchant updateMerchant(@PathVariable long id, @RequestBody MerchantDTO merchantDTO) {
+    public Merchant updateMerchant(@PathVariable Long id, @RequestBody MerchantDTO merchantDTO) {
         return merchantService.updateMerchant(id, merchantDTO);
+    }
+
+    @PutMapping("/merchantUpdatedMSS/{id}")
+    public Merchant updateMerchantMSS(@PathVariable Long id, @RequestBody MerchantDTO merchantDTO) {
+        return merchantService.updateMerchantMSS(id, merchantDTO);
     }
 
 

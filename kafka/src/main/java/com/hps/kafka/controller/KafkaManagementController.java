@@ -11,15 +11,18 @@ import java.util.concurrent.ExecutionException;
 @RequestMapping("/topics")
 public class KafkaManagementController {
 
+
     @Autowired
     @Lazy
     private KafkaManagementService kafkaManagementService;
 
-    @PostMapping("/createTopic")
-    public String createTopic(@RequestParam String topicName, @RequestParam int numPartitions, @RequestParam short replicationFactor) {
-        kafkaManagementService.createTopic(topicName, numPartitions, replicationFactor);
-        return "Topic created";
-    }
+    // New Way now in the main app
+//    @PostMapping("/createTopics")
+//    public String createTopics() {
+//        kafkaManagementService.createTopic("ContractCreationTopic", 3, (short) 1);
+//        kafkaManagementService.createTopic("AdminDashBoardTopic", 3, (short) 1);
+//        return "Topics created";
+//    }
 
     @DeleteMapping("/deleteTopic")
     public String deleteTopic(@RequestParam String topicName) throws ExecutionException, InterruptedException {
