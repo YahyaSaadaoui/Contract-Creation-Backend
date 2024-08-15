@@ -1,22 +1,50 @@
 package com.hps.merchantservicingservice.services;
 
+
+import com.hps.merchantservicingservice.dto.ActivityDTO;
+import com.hps.merchantservicingservice.dto.AdresseDTO;
 import com.hps.merchantservicingservice.dto.MerchantDTO;
-import com.hps.merchantservicingservice.feign.MerchantInterface;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.stream.Collectors;
+
 
 @Service
 public class MerchantServicingService {
     @Autowired
-    MerchantInterface merchantInterface;
-    private static final Logger logger = LoggerFactory.getLogger(MerchantServicingService.class);
-    public MerchantDTO createMerchant(MerchantDTO merchantDTO) {
-        logger.info("Sending MerchantDTO to MerchantOnboardingService: {}", merchantDTO);
-        ResponseEntity<MerchantDTO> response = merchantInterface.createMerchant(merchantDTO);
-        logger.info("Received response from MerchantOnboardingService: {}", response.getBody());
-        return response.getBody();
+    private RestTemplate restTemplate;
+
+    private static final String GATEWAY_URL = "http://localhost:8223/api/merchants/onboarding/merchantUpdated/";
+
+    public void updateMerchant(Long id, MerchantDTO updateRequest) {
+        String url = GATEWAY_URL + id;
+
+        MerchantDTO merchantDTO = new MerchantDTO();
+        merchantDTO.setId(id);
+        merchantDTO.setStatus(updateRequest.getStatus());
+        merchantDTO.setTaxRate(updateRequest.getTaxRate());
+        merchantDTO.setContactInfo(updateRequest.getContactInfo());
+        merchantDTO.setBankAccountDetails(updateRequest.getBankAccountDetails());
+        merchantDTO.setAddresses(updateRequest.getAddresses().stream()
+                .map(addressDTO -> new AdresseDTO(
+                        addressDTO.getStreet(),
+                        addressDTO.getCity(),
+                        addressDTO.getState(),
+                        addressDTO.getCountry(),
+                        addressDTO.getZipCode(),
+                        addressDTO.getEmail(),
+                        addressDTO.getPhoneNumber(),
+                        addressDTO.getFaxNumber()
+                )).collect(Collectors.toList()));
+        merchantDTO.setActivities(updateRequest.getActivities().stream()
+                .map(activityDTO -> new ActivityDTO(
+                        activityDTO.getActivityName()
+                )).collect(Collectors.toList()));
+
+        restTemplate.put(url, merchantDTO);
     }
+
 }

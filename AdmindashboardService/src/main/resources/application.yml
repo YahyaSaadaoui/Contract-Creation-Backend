@@ -18,5 +18,13 @@ spring:
     database-platform : org.hibernate.dialect.MySQL8Dialect
     show-sql: true
 
+jwt:
+  secret:
+  expiration: 999999999999
 
 
+logging:
+  level:
+    org:
+      springframework:
+        security=DEBUG: DEBUG

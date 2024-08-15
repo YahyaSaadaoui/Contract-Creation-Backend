@@ -1,52 +1,65 @@
 package com.hps.admindashboardservice.controllers;
 
+import com.hps.admindashboardservice.dto.JwtResponse;
+import com.hps.admindashboardservice.dto.LoginRequest;
 import com.hps.admindashboardservice.dto.UserDTO;
-import com.hps.admindashboardservice.entities.user;
-import com.hps.admindashboardservice.services.AdminDashboardService;
-import jakarta.annotation.PostConstruct;
-import org.apache.kafka.clients.admin.NewTopic;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.kafka.core.KafkaAdmin;
-import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
+import com.hps.admindashboardservice.security.JwtTokenProvider;
+import com.hps.admindashboardservice.services.AdminDashboardService;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/user")
 public class AdminDashboardController {
+
     @Autowired
     private AdminDashboardService adminDashboardService;
 
-    @PostMapping("/userCreated")
-    public user userCreated(@RequestBody UserDTO userDTO) {
-        return adminDashboardService.createUser(userDTO);
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private JwtTokenProvider jwtTokenProvider;
+
+
+
+    @PostMapping("/register")
+    public ResponseEntity<UserDTO> registerUser(@RequestBody UserDTO userDTO) {
+        UserDTO createdUser = adminDashboardService.createUser(userDTO);
+        return ResponseEntity.ok(createdUser);
     }
 
-    @PutMapping("/userUpdated/{id}")
-    public user userUpdated(@PathVariable long id, @RequestBody UserDTO userDTO) {
-        return adminDashboardService.updateUser(id, userDTO);
+    @PutMapping("/update/{id}")
+    public ResponseEntity<UserDTO> updateUser(@PathVariable long id, @RequestBody UserDTO userDTO) {
+        userDTO.setId(id); // Ensure ID is set in DTO
+        UserDTO updatedUser = adminDashboardService.updateUser(userDTO);
+        return ResponseEntity.ok(updatedUser);
     }
 
-    @DeleteMapping("/userDeleted/{id}")
-    public String userDeleted(@PathVariable long id) {
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<String> deleteUser(@PathVariable long id) {
         adminDashboardService.deleteUser(id);
-        return "User deleted event published";
+        return ResponseEntity.ok("User deleted event published");
     }
-    @Autowired
-    private KafkaAdmin kafkaAdmin;
 
-    @Autowired
-    private Map<String, Object> adminConfigs;
+    @PostMapping("/login")
+    public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword())
+        );
 
-    @PostConstruct
-    public void createTopic() {
-        String topicName = "admindashboard"; // Set the topic name here
-        int numPartitions = 1; // Adjust as needed
-        short replicationFactor = 1; // Adjust as needed
+        SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        NewTopic newTopic = new NewTopic(topicName, numPartitions, replicationFactor);
-        kafkaAdmin.createOrModifyTopics(newTopic);
+        String token = jwtTokenProvider.generateToken(loginRequest.getUsername(), authentication.getAuthorities().toString());
 
-        // You can add any additional topic creation logic here if required
+        return ResponseEntity.ok(new JwtResponse(token));
     }
 }
