@@ -5,14 +5,16 @@ import com.hps.admindashboardservice.entities.settings;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class UserDTO {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
     private String username;
     private String password;
@@ -27,5 +29,5 @@ public class UserDTO {
     private String created_by;
     private String updated_by;
     private String last_login_attempt_time;
-    private settings settings;
+    private SettingsDTO settings;
 }

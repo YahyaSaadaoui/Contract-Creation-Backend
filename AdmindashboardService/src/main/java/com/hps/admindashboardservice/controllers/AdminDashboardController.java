@@ -1,18 +1,19 @@
 package com.hps.admindashboardservice.controllers;
 
-import com.hps.admindashboardservice.dto.AuthRequest;
+import com.hps.admindashboardservice.dto.JwtResponse;
+import com.hps.admindashboardservice.dto.LoginRequest;
 import com.hps.admindashboardservice.dto.UserDTO;
-import com.hps.admindashboardservice.entities.User;
-import com.hps.admindashboardservice.services.AdminDashboardService;
-import com.hps.admindashboardservice.services.AuthService;
-import jakarta.annotation.PostConstruct;
-import org.apache.kafka.clients.admin.NewTopic;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.kafka.core.KafkaAdmin;
-import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
+import com.hps.admindashboardservice.security.JwtTokenProvider;
+import com.hps.admindashboardservice.services.AdminDashboardService;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/user")
@@ -21,35 +22,44 @@ public class AdminDashboardController {
     @Autowired
     private AdminDashboardService adminDashboardService;
 
+
     @Autowired
-    private AuthService authService;
+    private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private JwtTokenProvider jwtTokenProvider;
+
+
 
     @PostMapping("/register")
-    public User registerUser(@RequestBody UserDTO userDTO) {
-        return adminDashboardService.createUser(userDTO);
+    public ResponseEntity<UserDTO> registerUser(@RequestBody UserDTO userDTO) {
+        UserDTO createdUser = adminDashboardService.createUser(userDTO);
+        return ResponseEntity.ok(createdUser);
     }
 
     @PutMapping("/update/{id}")
-    public User updateUser(@PathVariable long id, @RequestBody UserDTO userDTO) {
-        return adminDashboardService.updateUser(id, userDTO);
+    public ResponseEntity<UserDTO> updateUser(@PathVariable long id, @RequestBody UserDTO userDTO) {
+        userDTO.setId(id); // Ensure ID is set in DTO
+        UserDTO updatedUser = adminDashboardService.updateUser(userDTO);
+        return ResponseEntity.ok(updatedUser);
     }
 
     @DeleteMapping("/delete/{id}")
-    public String deleteUser(@PathVariable long id) {
+    public ResponseEntity<String> deleteUser(@PathVariable long id) {
         adminDashboardService.deleteUser(id);
-        return "User deleted event published";
+        return ResponseEntity.ok("User deleted event published");
     }
 
     @PostMapping("/login")
-    public String login(@RequestBody AuthRequest authRequest) {
-        return authService.authenticate(authRequest);
+    public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword())
+        );
+
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        String token = jwtTokenProvider.generateToken(loginRequest.getUsername(), authentication.getAuthorities().toString());
+
+        return ResponseEntity.ok(new JwtResponse(token));
     }
-
-    @Lazy
-    @Autowired
-    private KafkaAdmin kafkaAdmin;
-
-    @Lazy
-    @Autowired
-    private Map<String, Object> adminConfigs;
 }

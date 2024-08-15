@@ -36,3 +36,20 @@ public class user {
     @JsonIgnore
     private settings settings;
 }
+
+/*
+* 1
+* GAdmin
+* Yahya000123@hps!!
+* yahyasaadaoui2019@gmail.com
+* adminsys
+* all
+* alwayAll
+* current date
+* null
+* null
+* null
+* null
+* null
+* null
+* */

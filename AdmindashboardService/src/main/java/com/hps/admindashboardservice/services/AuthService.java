@@ -1,6 +1,7 @@
 package com.hps.admindashboardservice.services;
 
 import com.hps.admindashboardservice.dto.AuthRequest;
+import com.hps.admindashboardservice.dto.LoginRequest;
 
 import com.hps.admindashboardservice.security.JwtTokenProvider;
 
@@ -14,7 +15,6 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class AuthService {
-
     @Autowired
     private AuthenticationManager authenticationManager;
 
@@ -26,12 +26,12 @@ public class AuthService {
 
     public String authenticate(AuthRequest authRequest) {
         try {
-            authenticationManager.authenticate(
+            Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword())
             );
 
             UserDetails userDetails = userDetailsService.loadUserByUsername(authRequest.getUsername());
-            return jwtTokenProvider.generateToken((Authentication) userDetails);
+            return jwtTokenProvider.generateToken(authRequest.getUsername(), authentication.getAuthorities().toString());
         } catch (Exception e) {
             throw new RuntimeException("Authentication failed", e);
         }

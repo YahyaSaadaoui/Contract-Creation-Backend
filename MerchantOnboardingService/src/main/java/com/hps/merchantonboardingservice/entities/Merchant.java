@@ -19,11 +19,11 @@ import java.util.List;
 public class Merchant {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    private String merchantNumber;
-    private String merchantName;
-    private String Status;
-    private Float taxRate;
+    private Long id;// TO send in the dto for Transacation Control
+    private String merchantNumber;// TO send in the dto for Transacation Control
+    private String merchantName;// TO send in the dto for Transacation Control
+    private String Status;// TO send in the dto for Transacation Control
+    private Float taxRate;// TO send in the dto for Transacation Control
     private String contactInfo;
     private String bankAccountDetails;
     private String contractStatus;

@@ -3,18 +3,12 @@ import com.hps.admindashboardservice.dto.SettingsDTO;
 import com.hps.admindashboardservice.dto.UserDTO;
 import com.hps.admindashboardservice.entities.settings;
 import com.hps.admindashboardservice.entities.user;
-import com.hps.admindashboardservice.events.UserCreatedEvent;
-import com.hps.admindashboardservice.events.UserDeletedEvent;
-import com.hps.admindashboardservice.events.UserUpdatedEvent;
 import com.hps.admindashboardservice.repos.settingsRepo;
 import com.hps.admindashboardservice.repos.userRepo;
-//import com.hps.kafka.service.CentralKafkaProducerService;
-import com.hps.kafka.service.CentralKafkaProducerService;
 import org.springframework.beans.factory.annotation.Autowired;
-
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
 
 @Service
 public class AdminDashboardService {
@@ -25,13 +19,12 @@ public class AdminDashboardService {
     private settingsRepo settingsRepository;
 
     @Autowired
-    private CentralKafkaProducerService kafkaProducerService;
-
+    private PasswordEncoder passwordEncoder;
 
     public UserDTO createUser(UserDTO userDTO) {
         user user = new user();
         user.setUsername(userDTO.getUsername());
-        user.setPassword(userDTO.getPassword());
+        user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
         user.setEmail(userDTO.getEmail());
         user.setRole(userDTO.getRole());
         user.setPermissions(userDTO.getPermissions());
@@ -44,13 +37,20 @@ public class AdminDashboardService {
         user.setUpdated_by(userDTO.getUpdated_by());
         user.setLast_login_attempt_time(userDTO.getLast_login_attempt_time());
 
-        // Create and set Settings
-        settings settings = userDTO.getSettings();
+        settings settings = new settings();
+        SettingsDTO settingsDTO = userDTO.getSettings();
+        settings.setId(settingsDTO.getId());
+        settings.setName(settingsDTO.getName());
+        settings.setValue(settingsDTO.getValue());
+        settings.setDescription(settingsDTO.getDescription());
+        settings.setFeePercentage(settingsDTO.getFeePercentage());
+        settings.setCurrency(settingsDTO.getCurrency());
         settings.setUser(user);
-        user.setSettings(settings);
 
-        settingsRepository.save(settings); // Save settings first
-        userRepository.save(user); // Save user with the reference to settings
+
+        user savedUser = userRepository.save(user);
+        settings.setUser(savedUser);
+        settingsRepository.save(settings);
 
         return userDTO;
     }
@@ -73,14 +73,30 @@ public class AdminDashboardService {
         user.setUpdated_by(userDTO.getUpdated_by());
         user.setLast_login_attempt_time(userDTO.getLast_login_attempt_time());
 
-        // Update settings
-        settings settings = userDTO.getSettings();
-        settings.setUser(user);
+        // Convert SettingsDTO to Settings entity
+        settings settings = userDTO.getSettings() != null ? settingsRepository.findById(userDTO.getSettings().getId()).orElse(new settings()) : new settings();
+        settings.setName(userDTO.getSettings().getName());
+        settings.setValue(userDTO.getSettings().getValue());
+        settings.setDescription(userDTO.getSettings().getDescription());
+        settings.setFeePercentage(userDTO.getSettings().getFeePercentage());
+        settings.setCurrency(userDTO.getSettings().getCurrency());
+        settings.setUser(user); // Set bi-directional relationship
+
         user.setSettings(settings);
 
         settingsRepository.save(settings); // Save settings first
         userRepository.save(user); // Save user with the updated settings
 
         return userDTO;
+    }
+
+    public void deleteUser(long id) {
+        user user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        settings settings = user.getSettings();
+        if (settings != null) {
+            settingsRepository.delete(settings); // Remove settings
+        }
+        userRepository.delete(user); // Remove user
     }
 }

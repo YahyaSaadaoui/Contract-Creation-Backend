@@ -1,18 +1,15 @@
 package com.hps.admindashboardservice.dto;
 
-public class AuthRequest {
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+
+public class LoginRequest {
     private String username;
     private String password;
 
-    // Constructors
-    public AuthRequest() {}
-
-    public AuthRequest(String username, String password) {
-        this.username = username;
-        this.password = password;
-    }
-
-    // Getters and setters
+    // Getters and Setters
     public String getUsername() {
         return username;
     }
