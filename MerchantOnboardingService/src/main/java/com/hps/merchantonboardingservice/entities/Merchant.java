@@ -24,6 +24,7 @@ public class Merchant {
     private String merchantName;// TO send in the dto for Transacation Control
     private String Status;// TO send in the dto for Transacation Control
     private Float taxRate;// TO send in the dto for Transacation Control
+    private Float accountBalance;// TO send in the dto for Settlement
     private String contactInfo;
     private String bankAccountDetails;
     private String contractStatus;
@@ -46,8 +47,5 @@ public class Merchant {
     @JsonIgnore
     private List<activities> activities;
 
-
-
-    // TODO : Add the fileds in the merchant creation in the service.
 
 }

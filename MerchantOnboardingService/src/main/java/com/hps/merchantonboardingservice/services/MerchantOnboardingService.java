@@ -71,6 +71,7 @@ public class MerchantOnboardingService {
         newMerchant.setStatus(merchantDTO.getStatus());
         newMerchant.setTaxRate(merchantDTO.getTaxRate());
         newMerchant.setContactInfo(merchantDTO.getContactInfo());
+        newMerchant.setAccountBalance(merchantDTO.getAccountBalance());
         newMerchant.setBankAccountDetails(merchantDTO.getBankAccountDetails());
         newMerchant.setContractStatus(merchantDTO.getContractStatus());
         newMerchant.setSettlementOption(merchantDTO.getSettlementOption());
@@ -130,6 +131,7 @@ public class MerchantOnboardingService {
             existingMerchant.setStatus(merchantDTO.getStatus());
             existingMerchant.setTaxRate(merchantDTO.getTaxRate());
             existingMerchant.setContactInfo(merchantDTO.getContactInfo());
+            existingMerchant.setAccountBalance(merchantDTO.getAccountBalance());
             existingMerchant.setBankAccountDetails(merchantDTO.getBankAccountDetails());
             existingMerchant.setContractStatus(merchantDTO.getContractStatus());
             existingMerchant.setSettlementOption(merchantDTO.getSettlementOption());

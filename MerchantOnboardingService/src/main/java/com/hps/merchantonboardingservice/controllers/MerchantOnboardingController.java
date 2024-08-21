@@ -4,6 +4,10 @@ import com.hps.merchantonboardingservice.dto.MerchantDTO;
 
 import com.hps.merchantonboardingservice.entities.Contract;
 import com.hps.merchantonboardingservice.entities.Merchant;
+import com.hps.merchantonboardingservice.mapper.ContractMapper;
+import com.hps.merchantonboardingservice.mapper.MerchantMapper;
+import com.hps.merchantonboardingservice.repos.ContractRepo;
+import com.hps.merchantonboardingservice.repos.MerchantRepo;
 import com.hps.merchantonboardingservice.services.MerchantOnboardingService;
 import jakarta.annotation.PostConstruct;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -15,13 +19,24 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/merchants/onboarding")
 public class MerchantOnboardingController {
     @Autowired
     private MerchantOnboardingService merchantService;
+    @Autowired
+    MerchantRepo merchantRepository;
+    @Autowired
+    private MerchantMapper merchantMapper;
+    @Autowired
+    ContractRepo contractRepo;
+    @Autowired
+    private ContractMapper contractMapper;
+
 //    @Autowired
 //    private KafkaAdmin kafkaAdmin;
 //    @Autowired
@@ -30,7 +45,16 @@ public class MerchantOnboardingController {
 //
 //    @PostConstruct
 //    public void createTopic() {
-//        String topicName = "merchant-onboarding";
+//        String topicName = "transactionControle-merchant-topic";
+//        int numPartitions = 1;
+//        short replicationFactor = 3;
+//
+//        NewTopic newTopic = new NewTopic(topicName, numPartitions, replicationFactor);
+//        kafkaAdmin.createOrModifyTopics(newTopic);
+//    }
+    //    @PostConstruct
+//    public void createTopic() {
+//        String topicName = "settelment-merchant-topic";
 //        int numPartitions = 1;
 //        short replicationFactor = 1;
 //
@@ -50,6 +74,22 @@ public class MerchantOnboardingController {
     public ResponseEntity<Merchant> createMerchant(@RequestBody MerchantDTO merchantDTO) {
         Merchant createdMerchant = merchantService.createMerchant(merchantDTO);
         return ResponseEntity.created(URI.create("/merchants/" + createdMerchant.getMerchantNumber())).body(createdMerchant);
+    }
+
+    @GetMapping("/allMerchants")
+    public List<MerchantDTO> getAllMerchants() {
+        List<Merchant> merchants = merchantRepository.findAll();
+        return merchants.stream()
+                .map(merchantMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    @GetMapping("/allContracts")
+    public List<ContractDTO> getAllContracts() {
+        List<Contract> contracts = contractRepo.findAll();
+        return contracts.stream()
+                .map(contractMapper::toDto)
+                .collect(Collectors.toList());
     }
 
     @PutMapping("/contractUpdated/{id}")
