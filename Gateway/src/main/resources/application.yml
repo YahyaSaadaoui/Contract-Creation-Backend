@@ -1,0 +1,31 @@
+spring:
+  cache:
+    type: caffeine
+  application:
+    name: gateway
+  config:
+    import: optional:configserver:http://localhost:8888
+  cloud:
+    inetutils:
+      use-only-site-local-interfaces: true
+    gateway:
+      routes:
+        - id: AdmindashboardService
+          uri: lb://ADMINDASHBOARDSERVICE
+          predicates:
+            - Path=/api/user/**
+        - id: MerchantOnBoardingService
+          uri: lb://MERCHANTONBOARDINGSERVICE
+          predicates:
+            - Path=/api/merchants/onboarding/**
+        - id: MerchantServicingService
+          uri: lb://MERCHANTSERVICINGSERVICE
+          predicates:
+            - Path=/api/merchants/servicing/**
+        - id: TmsS
+          uri: lb://TMSS
+          predicates:
+            - Path=/api/tms/**
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+

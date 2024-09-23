@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: AdmindashboardService
+  profiles:
+    active: default
+  main:
+    allow-bean-definition-overriding: true
+  config:
+    import: optional:configserver:http://localhost:8888
+  datasource:
+    url: jdbc:mysql://localhost:3306/Admin-DashBoard?createDatabaseIfNotExist=true&serverTimezone=UTC
+    username: root
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database: mysql
+    database-platform : org.hibernate.dialect.MySQL8Dialect
+    show-sql: true
+
+jwt:
+  secret:
+  expiration: 999999999999
+
+
+logging:
+  level:
+    org:
+      springframework:
+        security=DEBUG: DEBUG
